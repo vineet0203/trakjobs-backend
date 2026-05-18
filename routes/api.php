@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Client\ClientAvailabilityController; // NEW: Add
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Customer\CustomerAuthController;
 use App\Http\Controllers\Api\V1\Customer\CustomerNotificationController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Customer\CustomerJobController;
 use App\Http\Controllers\Api\V1\Customer\CustomerQuoteController;
 use App\Http\Controllers\Api\V1\Customer\CustomerController;
@@ -411,6 +412,9 @@ Route::fallback(function () {
 
 Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::post('notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::get('/vendors/reports/overview', [ReportsController::class, 'overview']);
     Route::get('/vendors/reports/service-types', [ReportsController::class, 'getServiceTypes']);
 });

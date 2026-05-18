@@ -10,6 +10,7 @@ use App\Http\Resources\Api\V1\Schedule\ScheduleResource;
 use App\Models\Schedule;
 use App\Models\Job;
 use App\Traits\ApiResponse;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -160,6 +161,7 @@ class ScheduleController extends BaseController
                 'status' => 'success',
             ]);
 
+            NotificationHelper::scheduleCreated($schedule, null, auth()->id());
             return $this->createdResponse(
                 new ScheduleResource($schedule),
                 'Schedule created successfully.'

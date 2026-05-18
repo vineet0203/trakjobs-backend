@@ -15,6 +15,7 @@ use App\Services\Quotes\QuoteQueryService;
 use App\Services\Quotes\QuoteUpdateService;
 use App\Services\Quotes\QuoteDeletionService;
 use App\Traits\ApiResponse;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
@@ -85,6 +86,7 @@ class QuoteController extends BaseController
                 'status' => 'success'
             ]);
 
+            NotificationHelper::quoteCreated($quote, auth()->id());
             return $this->createdResponse(
                 new QuoteResource($quote),
                 'Quote created successfully.'

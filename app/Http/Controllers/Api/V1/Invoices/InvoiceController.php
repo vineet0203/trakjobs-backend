@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\InvoicePublicLink;
 use App\Notifications\InvoicePublicLinkNotification;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -157,6 +158,7 @@ class InvoiceController extends BaseController
 
         $invoice->load(['employee', 'client', 'items']);
 
+        NotificationHelper::invoiceCreated($invoice, auth()->id());
         return $this->createdResponse(new InvoiceResource($invoice), 'Invoice created successfully.');
     }
 
@@ -396,9 +398,10 @@ class InvoiceController extends BaseController
             ),
         );
 
+        NotificationHelper::invoiceSent($invoice, auth()->id());
         return $this->successResponse([
             'sent_to' => $email,
-            'expires_at' => $expiresAt->toIso8601String(),
+            'expires_at' => \$expiresAt->toIso8601String(),
         ], 'Invoice link sent successfully.');
     }
 

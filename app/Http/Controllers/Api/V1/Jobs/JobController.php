@@ -26,6 +26,7 @@ use App\Models\JobAssignment;
 use App\Models\Employee;
 use App\Models\JobActivity;
 use App\Traits\ApiResponse;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -82,6 +83,7 @@ class JobController extends BaseController
             ]);
 
             // Load only the relationships you need for the response
+            NotificationHelper::jobCreated($Job, auth()->id());
             return $this->createdResponse(
                 new JobResource($Job->load(['client', 'tasks'])),
                 'Job created successfully.'
@@ -403,6 +405,7 @@ class JobController extends BaseController
                 'status' => 'success'
             ]);
 
+            NotificationHelper::jobStatusUpdated($Job, $status, auth()->id());
             return $this->successResponse(
                 new JobResource($Job),
                 'Job status updated successfully.'
@@ -906,6 +909,7 @@ class JobController extends BaseController
                 'performed_by' => $user->id,
             ]);
 
+            NotificationHelper::jobAssigned($job, $employee, auth()->id());
             return $this->successResponse(
                 $assignment->load('employee'),
                 'Job assigned successfully.'
