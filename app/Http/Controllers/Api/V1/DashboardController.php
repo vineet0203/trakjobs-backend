@@ -24,14 +24,44 @@ class DashboardController extends Controller
         }
         [$from, $to] = $this->resolveDateRange($request);
         return response()->json(['data' => [
-            'stats'          => $this->getStats($vendorId, $from, $to),
-            'todaySchedule'  => $this->getScheduleRange($vendorId, $from, $to),
-            'teamStatus'     => $this->getTeamStatus($vendorId, $from, $to),
+            'stats'            => $this->getStats($vendorId, $from, $to),
+            'recentBookings'   => $this->getRecentBookings($vendorId),
+            'upcomingBookings' => $this->getUpcomingBookings($vendorId),
+            'teamStatus'       => $this->getTeamStatus($vendorId, $from, $to),
             'totalEarning'   => $this->getTotalEarning($vendorId, $from, $to),
             'earningChart'   => $this->getEarningChartData($vendorId, $from, $to),
             'recentQuotes'   => $this->getRecentQuotes($vendorId, $from, $to),
             'recentInvoices' => $this->getRecentInvoices($vendorId, $from, $to),
+            'bookingStatus'  => [
+                'completed' => Job::where('vendor_id', $vendorId)->whereBetween('created_at', [$from, $to])->whereIn('status', ['completed', 'finished'])->count(),
+                'upcoming'  => Job::where('vendor_id', $vendorId)->whereBetween('created_at', [$from, $to])->whereIn('status', ['in_progress', 'assigned', 'scheduled', 'pending'])->count(),
+                'cancelled' => Job::where('vendor_id', $vendorId)->whereBetween('created_at', [$from, $to])->whereIn('status', ['cancelled', 'rejected'])->count(),
+            ],
+            'is_available'   => \App\Models\Vendor::find($vendorId)?->status === 'active'
         ]]);
+    }
+
+    public function toggleAvailability(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $vendorId = $user?->vendor_id ?? $user?->id;
+        $vendor = \App\Models\Vendor::find($vendorId);
+        
+        if (!$vendor) {
+            return response()->json(['message' => 'Vendor not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'is_available' => 'required|boolean'
+        ]);
+
+        $vendor->status = $validated['is_available'] ? 'active' : 'inactive';
+        $vendor->save();
+
+        return response()->json([
+            'message' => 'Availability updated successfully.',
+            'is_available' => $vendor->status === 'active'
+        ]);
     }
 
     private function getStats(int $vendorId, Carbon $from, Carbon $to): array
@@ -59,19 +89,44 @@ class DashboardController extends Controller
         ];
     }
 
-    private function getScheduleRange(int $vendorId, Carbon $from, Carbon $to): array
+    private function getRecentBookings(int $vendorId): array
     {
         return Schedule::where('vendor_id', $vendorId)
-            ->whereBetween('start_datetime', [$from, $to])
             ->with(['job.client', 'job.customer'])
-            ->orderBy('start_datetime')
-            ->limit(10)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
             ->get()
             ->map(function ($s) {
                 $job = $s->job;
                 $client = $job?->customer?->name ?? $job?->client?->full_name ?? $job?->client?->name ?? 'N/A';
                 return [
                     'id'      => $s->id,
+                    'job_number' => $job?->job_number ?? strval($s->id),
+                    'time'    => Carbon::parse($s->start_datetime)->format('h:i A'),
+                    'date'    => Carbon::parse($s->start_datetime)->format('M d, Y'),
+                    'client'  => $client,
+                    'service' => $job?->title ?? $job?->service_type ?? 'Service',
+                    'address' => $job?->address ?? $s->location ?? '',
+                    'status'  => $s->status ?? 'scheduled',
+                ];
+            })->toArray();
+    }
+
+    private function getUpcomingBookings(int $vendorId): array
+    {
+        return Schedule::where('vendor_id', $vendorId)
+            ->where('start_datetime', '>=', Carbon::now())
+            ->whereIn('status', ['scheduled', 'pending', 'approved', 'in_progress'])
+            ->with(['job.client', 'job.customer'])
+            ->orderBy('start_datetime', 'asc')
+            ->limit(5)
+            ->get()
+            ->map(function ($s) {
+                $job = $s->job;
+                $client = $job?->customer?->name ?? $job?->client?->full_name ?? $job?->client?->name ?? 'N/A';
+                return [
+                    'id'      => $s->id,
+                    'job_number' => $job?->job_number ?? strval($s->id),
                     'time'    => Carbon::parse($s->start_datetime)->format('h:i A'),
                     'date'    => Carbon::parse($s->start_datetime)->format('M d, Y'),
                     'client'  => $client,

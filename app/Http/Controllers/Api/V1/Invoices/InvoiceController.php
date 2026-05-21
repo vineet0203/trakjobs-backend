@@ -401,7 +401,7 @@ class InvoiceController extends BaseController
         NotificationHelper::invoiceSent($invoice, auth()->id());
         return $this->successResponse([
             'sent_to' => $email,
-            'expires_at' => \$expiresAt->toIso8601String(),
+            'expires_at' => $expiresAt->toIso8601String(),
         ], 'Invoice link sent successfully.');
     }
 

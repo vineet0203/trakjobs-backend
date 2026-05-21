@@ -412,6 +412,7 @@ Route::fallback(function () {
 
 Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::post('/dashboard/availability', [DashboardController::class, 'toggleAvailability']);
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::post('notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
