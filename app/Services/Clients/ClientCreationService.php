@@ -103,7 +103,7 @@ class ClientCreationService
                 'mobile_number',
                 'alternate_mobile_number',
                 'website_url',
-                'service_category',
+                'service_category', 'service_sub_category',
                 'notes',
                 'vendor_id',
                 'created_by',

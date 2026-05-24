@@ -51,6 +51,7 @@ class ClientResource extends JsonResource
             'website_url' => $this->website_url,
             'logo' => $this->getSignedUrlData($this->logo_path),
             'service_category' => $this->service_category,
+            'service_sub_category' => $this->service_sub_category,
             'notes' => $this->notes,
             //'status' => $this->status,
             'created_by' => $this->created_by,

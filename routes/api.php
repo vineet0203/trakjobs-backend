@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Customer\CustomerNotificationController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Customer\CustomerJobController;
 use App\Http\Controllers\Api\V1\Customer\CustomerQuoteController;
+use App\Http\Controllers\Api\V1\Customer\CustomerServiceRequestController;
 use App\Http\Controllers\Api\V1\Customer\CustomerController;
 use App\Http\Controllers\Api\V1\Employee\EmployeeAuthController;
 use App\Http\Controllers\Api\V1\Employee\TimeTrackingController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Api\V1\Invoices\InvoiceController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Reports\ReportsController;
 use App\Http\Controllers\Api\V1\AI\AIQuoteController;
+use App\Http\Controllers\Api\V1\PublicBookingController;
 use App\Services\RequestAnalyticsService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -83,6 +85,13 @@ Route::prefix('auth')->group(function () {
     Route::post('password/verify-token', [AuthController::class, 'verifyResetToken'])->name('auth.verify-email');
 });
 
+// ============================================
+// PUBLIC BOOKING ROUTE
+// ============================================
+Route::prefix('public')->group(function () {
+    Route::post('bookings', [PublicBookingController::class, 'store']);
+});
+
 Route::prefix('employee')->group(function () {
     Route::post('login', [EmployeeAuthController::class, 'login']);
     Route::post('set-password', [EmployeeAuthController::class, 'setPassword']);
@@ -119,6 +128,10 @@ Route::middleware(['customer.jwt'])->prefix('customer')->group(function () {
     Route::patch('quotes/{id}/approval', [CustomerQuoteController::class, 'updateApproval']);
     Route::post('quotes/{id}/decision', [CustomerQuoteController::class, 'decide']);
     Route::post('quotes/{id}/submit', [CustomerQuoteController::class, 'submit']);
+
+    Route::get('service-requests', [CustomerServiceRequestController::class, 'index']);
+    Route::get('service-requests/{id}', [CustomerServiceRequestController::class, 'show']);
+    Route::patch('service-requests/{id}/status', [CustomerServiceRequestController::class, 'updateStatus']);
 
     Route::get('jobs', [CustomerJobController::class, 'index']);
     Route::get('jobs/{id}', [CustomerJobController::class, 'show']);

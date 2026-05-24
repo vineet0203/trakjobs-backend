@@ -37,6 +37,7 @@ class Client extends BaseModel
         'website_url',
         'logo_path',
         'service_category',
+        'service_sub_category',
         'notes',
         'status',
         'created_by',

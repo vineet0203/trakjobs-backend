@@ -91,7 +91,7 @@ class ClientUpdateService
                 'mobile_number',
                 'alternate_mobile_number',
                 'website_url',
-                'service_category',
+                'service_category', 'service_sub_category',
                 'notes',
                 'status',
                 'logo_temp_id',
