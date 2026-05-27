@@ -10,7 +10,8 @@ class RegistrationValidationService
 {
     public function __construct(
         private PasswordService $passwordService
-    ) {}
+    ) {
+    }
 
     public function validateRegistrationData(array $data): void
     {
@@ -30,6 +31,12 @@ class RegistrationValidationService
             'full_name',
             'email',
             'mobile_number',
+            'business_type',
+            'service_category',
+            'service_sub_category',
+            'availability_type',
+            'office_start_time',
+            'office_end_time',
             'terms_accepted',
             'password',
         ];
@@ -43,6 +50,27 @@ class RegistrationValidationService
 
         if (!empty($missing)) {
             throw new \Exception("Required fields are missing: " . implode(', ', $missing));
+        }
+
+        if (
+            ($data['service_category'] ?? null) === 'custom'
+            && empty($data['service_category_custom'])
+        ) {
+            throw new \Exception('New main service is required');
+        }
+
+        if (
+            ($data['service_sub_category'] ?? null) === 'custom'
+            && empty($data['service_sub_category_custom'])
+        ) {
+            throw new \Exception('New sub-service is required');
+        }
+
+        if (($data['availability_type'] ?? null) === 'custom') {
+            $days = $data['availability_days'] ?? [];
+            if (!is_array($days) || count($days) < 1) {
+                throw new \Exception('Availability days are required');
+            }
         }
     }
 
@@ -58,14 +86,27 @@ class RegistrationValidationService
             throw new \Exception("Please enter a valid website URL");
         }
 
-        // Validate business type if provided
-        if (isset($data['business_type']) && !in_array($data['business_type'], ['plumbing', 'carpentry', 'electrical', 'cleaning', 'other'])) {
-            throw new \Exception("Invalid business type. Must be plumbing, carpentry, electrical, cleaning, or other");
+        if (!in_array($data['business_type'], ['commercial', 'residential'], true)) {
+            throw new \Exception("Invalid business type. Must be commercial or residential");
         }
 
-        // Validate service description length if provided
-        if (isset($data['service_description']) && strlen($data['service_description']) > 500) {
-            throw new \Exception("Service description must not exceed 500 characters");
+        $availabilityType = $data['availability_type'] ?? null;
+        if (!in_array($availabilityType, ['mon_fri', 'full_week', 'custom'], true)) {
+            throw new \Exception('Invalid availability type. Must be mon_fri, full_week, or custom');
+        }
+
+        if ($availabilityType === 'custom') {
+            $validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            $days = $data['availability_days'] ?? [];
+            foreach ($days as $day) {
+                if (!in_array($day, $validDays, true)) {
+                    throw new \Exception('Invalid availability day');
+                }
+            }
+        }
+
+        if (empty($data['office_start_time']) || empty($data['office_end_time'])) {
+            throw new \Exception('Office start and end time are required');
         }
     }
 

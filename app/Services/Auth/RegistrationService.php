@@ -18,7 +18,8 @@ class RegistrationService
         private RegistrationValidationService $validationService,
         private NotificationService $notificationService,
         private RoleService $roleService
-    ) {}
+    ) {
+    }
 
     public function registerVendor(array $data): User
     {
@@ -68,14 +69,31 @@ class RegistrationService
     {
         Log::info('Creating Vendor business...');
 
+        $availabilityType = $data['availability_type'] ?? null;
+        $availabilityDays = $data['availability_days'] ?? null;
+
+        if ($availabilityType === 'mon_fri') {
+            $availabilityDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+        } elseif ($availabilityType === 'full_week') {
+            $availabilityDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        }
+
         $vendorData = [
             'business_name' => $data['business_name'],
             'website_name' => $data['website_name'],
             'full_name' => $data['full_name'], // Store full name in vendor table
             'email' => $data['email'], // Store email in vendor table
             'mobile_number' => $data['mobile_number'],
-            'business_type' => $data['business_type'] ?? 'other',
+            'business_type' => $data['business_type'],
             'service_description' => $data['service_description'] ?? null,
+            'service_category' => $data['service_category'] ?? null,
+            'service_sub_category' => $data['service_sub_category'] ?? null,
+            'service_category_custom' => $data['service_category_custom'] ?? null,
+            'service_sub_category_custom' => $data['service_sub_category_custom'] ?? null,
+            'availability_type' => $availabilityType,
+            'availability_days' => $availabilityDays,
+            'office_start_time' => $data['office_start_time'] ?? null,
+            'office_end_time' => $data['office_end_time'] ?? null,
             'terms_accepted' => $data['terms_accepted'] ?? false,
             'status' => 'active',
         ];

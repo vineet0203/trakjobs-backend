@@ -15,6 +15,14 @@ class Vendor extends BaseModel
         'website_name',
         'business_type',
         'service_description',
+        'service_category',
+        'service_sub_category',
+        'service_category_custom',
+        'service_sub_category_custom',
+        'availability_type',
+        'availability_days',
+        'office_start_time',
+        'office_end_time',
         'full_name',
         'email',
         'mobile_number',
@@ -28,6 +36,7 @@ class Vendor extends BaseModel
 
     protected $casts = [
         'terms_accepted' => 'boolean',
+        'availability_days' => 'array',
     ];
 
     // Relationships

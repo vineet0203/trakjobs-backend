@@ -18,6 +18,20 @@ class RegisterRequest extends FormRequest
             // Business/Vendor Information - matching migration columns
             'business_name' => 'required|string|max:191|unique:vendors,business_name',
             'website_name' => 'required|string|url|max:191',
+            'business_type' => 'required|string|in:commercial,residential',
+
+            // Services
+            'service_category' => 'required|string|max:191',
+            'service_category_custom' => 'nullable|string|max:191|required_if:service_category,custom',
+            'service_sub_category' => 'required|string|max:191',
+            'service_sub_category_custom' => 'nullable|string|max:191|required_if:service_sub_category,custom',
+
+            // Availability
+            'availability_type' => 'required|string|in:mon_fri,full_week,custom',
+            'availability_days' => 'nullable|array|required_if:availability_type,custom|min:1',
+            'availability_days.*' => 'string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'office_start_time' => 'required|date_format:H:i',
+            'office_end_time' => 'required|date_format:H:i|after:office_start_time',
 
             // Personal Information
             'full_name' => 'required|string|max:191',
@@ -38,10 +52,6 @@ class RegisterRequest extends FormRequest
 
             // Terms agreement
             'terms_accepted' => 'required|boolean|accepted',
-
-            // Optional fields - matching vendor migration columns
-            'business_type' => 'nullable|string|in:plumbing,carpentry,electrical,cleaning,other',
-            'service_description' => 'nullable|string|max:500',
         ];
     }
 
@@ -57,6 +67,17 @@ class RegisterRequest extends FormRequest
             'email.email' => 'Please enter a valid email address',
             'email.unique' => 'This email address is already registered.',
             'mobile_number.required' => 'Mobile number is required',
+            'business_type.required' => 'Business type is required',
+            'service_category.required' => 'Main service category is required',
+            'service_category_custom.required_if' => 'New main service is required',
+            'service_sub_category.required' => 'Service subcategory is required',
+            'service_sub_category_custom.required_if' => 'New sub-service is required',
+            'availability_type.required' => 'Availability is required',
+            'availability_days.required_if' => 'Availability days are required',
+            'availability_days.min' => 'Select at least one available day',
+            'office_start_time.required' => 'Office start time is required',
+            'office_end_time.required' => 'Office end time is required',
+            'office_end_time.after' => 'Office end time must be after start time',
             'password.required' => 'Password is required',
             'password.confirmed' => 'Password confirmation does not match',
             'terms_accepted.required' => 'You must accept the terms and conditions',

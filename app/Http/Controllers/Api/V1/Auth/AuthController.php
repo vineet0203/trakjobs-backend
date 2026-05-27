@@ -21,7 +21,8 @@ class AuthController extends BaseController
     public function __construct(
         private AuthService $authService,
         private PasswordService $passwordService
-    ) {}
+    ) {
+    }
 
     /**
      * Login user and return JWT token
@@ -69,7 +70,7 @@ class AuthController extends BaseController
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             return $this->errorResponse(
-                'Registration failed. Please try again.',
+                $e->getMessage() ?: 'Registration failed. Please try again.',
                 400
             );
         } finally {
