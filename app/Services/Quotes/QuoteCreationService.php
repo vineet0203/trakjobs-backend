@@ -30,6 +30,9 @@ class QuoteCreationService
             // Fetch client details from database
             $client = Client::findOrFail($data['client_id']);
 
+            // Find matching Customer
+            $customer = \App\Models\Customer::where('email', $client->email)->first();
+
             // Generate quote number
             $quoteNumber = Quote::generateQuoteNumber();
 
@@ -41,6 +44,7 @@ class QuoteCreationService
                 'quote_number' => $quoteNumber,
                 'title' => $data['title'],
                 'client_id' => $data['client_id'],
+                'customer_id' => $customer ? $customer->id : null,
                 'client_name' => $this->getClientDisplayName($client),
                 'client_email' => $client->email,
                 'equity_status' => $data['equity_status'] ?? 'not_applicable',
@@ -226,12 +230,38 @@ class QuoteCreationService
             if ($fresh && $fresh->client_email) {
                 $customer = \App\Models\Customer::where('email', $fresh->client_email)->first();
                 if ($customer) {
+                    if (!$fresh->customer_id) {
+                        $quote->update(['customer_id' => $customer->id]);
+                        $fresh = $quote->fresh();
+                    }
+
                     CustomerNotification::create([
                         'customer_id' => $customer->id,
                         'type'        => 'quote_sent',
                         'title'       => 'New Quote Received',
                         'message'     => 'Quote #' . $fresh->quote_number . ' - ' . $fresh->title . ' has been sent for your approval.',
                         'data'        => ['quote_id' => $fresh->id],
+                    ]);
+
+                    // Send email notification
+                    $loginUrl = rtrim((string) config('app.customer_frontend_url', 'https://customer.trakjobs.com'), '/') . '/login';
+                    \Illuminate\Support\Facades\Mail::send('emails.quote_notification', [
+                        'title' => 'New Quotation Received',
+                        'greeting' => 'Hello ' . ($customer->name ?: 'Customer') . ',',
+                        'name' => $customer->name ?: 'Customer',
+                        'body' => 'A new quotation has been prepared for you. Please review the details below and log in to the Customer Panel to accept or reject it.',
+                        'quoteNumber' => $fresh->quote_number,
+                        'quoteTitle' => $fresh->title,
+                        'totalAmount' => '$' . number_format((float) $fresh->total_amount, 2),
+                        'loginUrl' => $loginUrl,
+                    ], function ($message) use ($customer, $fresh) {
+                        $message->to($customer->email)
+                            ->subject('New Quotation #' . $fresh->quote_number . ' - ' . config('app.name', 'TrackJobs'));
+                    });
+
+                    Log::info('Quote email notification sent to customer', [
+                        'quote_id' => $fresh->id,
+                        'email' => $customer->email,
                     ]);
                 }
             }

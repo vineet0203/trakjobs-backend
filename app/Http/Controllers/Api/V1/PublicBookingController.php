@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class PublicBookingController extends BaseController
 {
@@ -54,10 +55,22 @@ class PublicBookingController extends BaseController
             'service_name' => ['nullable', 'string', 'max:255'],
             'unit_price' => ['nullable', 'numeric'],
             'quantity' => ['nullable', 'integer', 'min:1'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['file', 'image', 'max:5120'],
         ]);
 
         try {
             DB::beginTransaction();
+
+            // Handle uploaded images if any
+            $uploadedImages = [];
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    $filename = 'quote_' . Str::random(10) . '_' . time() . '.' . $file->getClientOriginalExtension();
+                    $path = $file->storeAs('private/quotes', $filename, 'local');
+                    $uploadedImages[] = $path;
+                }
+            }
 
             // 1. Get or create the Customer (End-user making the booking)
             $customer = Customer::firstOrCreate(
@@ -68,6 +81,16 @@ class PublicBookingController extends BaseController
                     'status' => 'active',
                 ]
             );
+
+            // Send password setup link to newly created customer or customer who has not set password yet
+            if ($customer->wasRecentlyCreated || empty($customer->password)) {
+                Log::info('Attempting to send setup link to customer: ' . $customer->email . ' (recently created: ' . ($customer->wasRecentlyCreated ? 'true' : 'false') . ')');
+                try {
+                    app(\App\Services\Customer\CustomerAccountService::class)->resendSetupLink($customer);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to send customer setup link: ' . $e->getMessage());
+                }
+            }
 
             // 2. Fetch the selected vendors
             $matchingVendors = \App\Models\Vendor::whereIn('id', $validated['vendor_ids'])
@@ -108,9 +131,10 @@ class PublicBookingController extends BaseController
                     'client_name' => $customer->name,
                     'client_email' => $customer->email,
                     'status' => 'pending', // Pending provider response
-                    'notes' => "Location: {$validated['location']}\nDate: {$validated['date']}\nTime: {$validated['time']}\nNotes: {$validated['notes']}",
+                    'notes' => "Location: " . ($validated['location'] ?? '') . "\nDate: " . ($validated['date'] ?? '') . "\nTime: " . ($validated['time'] ?? '') . "\nNotes: " . ($validated['notes'] ?? ''),
                     'subtotal' => 0,
                     'total_amount' => 0,
+                    'images' => $uploadedImages,
                 ]);
 
                 // Create quote item if details are provided

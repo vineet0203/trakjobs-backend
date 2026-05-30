@@ -87,7 +87,22 @@ class QuoteUpdateService
                 $this->updateQuoteReminders($quote, $data['reminders'], $updatedBy);
             }
 
+            // Auto-promote status to pending and reset approval fields if in draft/pending/rejected
+            $customer = \App\Models\Customer::where('email', $quote->client_email)->first();
+            $quote->update([
+                'status' => 'pending',
+                'sent_at' => now(),
+                'approval_status' => 'pending',
+                'approval_date' => null,
+                'approval_action_date' => null,
+                'customer_signature' => null,
+                'customer_id' => $customer ? $customer->id : $quote->customer_id,
+            ]);
+
             DB::commit();
+
+            // Send notification/email to the customer
+            $this->notifyCustomerOnUpdate($quote);
 
             Log::info('Quote updated successfully', [
                 'quote_id' => $quote->id,
@@ -234,5 +249,50 @@ class QuoteUpdateService
         ]);
 
         return $quote->fresh();
+    }
+
+    /**
+     * Send email and database notification to customer on quote update
+     */
+    private function notifyCustomerOnUpdate(Quote $quote): void
+    {
+        try {
+            $fresh = $quote->fresh();
+            if ($fresh && $fresh->client_email) {
+                $customer = \App\Models\Customer::where('email', $fresh->client_email)->first();
+                if ($customer) {
+                    \App\Models\CustomerNotification::create([
+                        'customer_id' => $customer->id,
+                        'type'        => 'quote_updated',
+                        'title'       => 'Quotation Updated',
+                        'message'     => 'Quote #' . $fresh->quote_number . ' - ' . $fresh->title . ' has been updated and is ready for your review.',
+                        'data'        => ['quote_id' => $fresh->id],
+                    ]);
+
+                    // Send email notification
+                    $loginUrl = rtrim((string) config('app.customer_frontend_url', 'https://customer.trakjobs.com'), '/') . '/login';
+                    \Illuminate\Support\Facades\Mail::send('emails.quote_notification', [
+                        'title' => 'Quotation Updated',
+                        'greeting' => 'Hello ' . ($customer->name ?: 'Customer') . ',',
+                        'name' => $customer->name ?: 'Customer',
+                        'body' => 'A quotation has been revised/updated by the vendor. Please review the updated details below and log in to the Customer Panel to accept or reject it.',
+                        'quoteNumber' => $fresh->quote_number,
+                        'quoteTitle' => $fresh->title,
+                        'totalAmount' => '$' . number_format((float) $fresh->total_amount, 2),
+                        'loginUrl' => $loginUrl,
+                    ], function ($message) use ($customer, $fresh) {
+                        $message->to($customer->email)
+                            ->subject('Updated Quotation #' . $fresh->quote_number . ' - ' . config('app.name', 'TrackJobs'));
+                    });
+
+                    Log::info('Quote update email notification sent to customer', [
+                        'quote_id' => $fresh->id,
+                        'email' => $customer->email,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to notify customer on quote update: ' . $e->getMessage());
+        }
     }
 }

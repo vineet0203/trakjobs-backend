@@ -90,6 +90,17 @@ class QuoteResource extends JsonResource
             'can_edit' => $this->canBeEdited(),
             'can_send' => $this->canBeSent(),
             'can_convert' => $this->canBeConverted(),
+            'images' => collect($this->images ?? [])->map(function ($path) {
+                if (filter_var($path, FILTER_VALIDATE_URL)) {
+                    return $path;
+                }
+                try {
+                    $signedUrlData = app(\App\Services\File\SignedUrlService::class)->generateTemporarySignedUrl($path, 1440);
+                    return $signedUrlData['url'] ?? null;
+                } catch (\Exception $e) {
+                    return null;
+                }
+            })->filter()->values()->all(),
         ];
     }
 }

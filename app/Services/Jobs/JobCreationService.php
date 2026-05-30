@@ -35,7 +35,7 @@ class JobCreationService
                 'job_number' => $JobNumber,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
-                'vendor_id' => auth()->user()->vendor_id,
+                'vendor_id' => $data['vendor_id'] ?? auth()->user()->vendor_id ?? null,
                 'client_id' => $data['client_id'],
                 'quote_id' => $data['quote_id'] ?? null,
                 'assigned_to' => $data['assigned_to'] ?? null,
@@ -170,9 +170,11 @@ class JobCreationService
     {
         $quote = Quote::with(['client', 'items', 'client.vendor'])->findOrFail($quoteId);
 
-        $vendorId = auth()->user()->vendor_id;
-        if ($quote->client->vendor_id !== $vendorId) {
-            throw new \Exception('Quote does not belong to your vendor account.');
+        $user = auth()->user();
+        if ($user && isset($user->vendor_id) && $user->vendor_id) {
+            if ($quote->client->vendor_id !== $user->vendor_id) {
+                throw new \Exception('Quote does not belong to your vendor account.');
+            }
         }
 
         if (!$quote->can_convert_to_job) {
@@ -202,10 +204,26 @@ class JobCreationService
                 'deposit_amount' => $quote->deposit_amount ?? 0,
                 'notes' => $quote->notes,
                 'is_converted_from_quote' => true,
+                'vendor_id' => $quote->vendor_id,
             ];
 
-            // Create the job (job)
+            // Create job (job)
             $Job = $this->create($data, $convertedBy);
+
+            // Copy quote images to job attachments
+            if (!empty($quote->images)) {
+                foreach ($quote->images as $imagePath) {
+                    $Job->attachments()->create([
+                        'file_name' => basename($imagePath),
+                        'file_path' => $imagePath,
+                        'file_type' => 'image',
+                        'mime_type' => 'image/' . pathinfo($imagePath, PATHINFO_EXTENSION),
+                        'file_size' => \Illuminate\Support\Facades\Storage::disk('local')->exists($imagePath) ? \Illuminate\Support\Facades\Storage::disk('local')->size($imagePath) : 0,
+                        'disk' => 'local',
+                        'uploaded_by' => $convertedBy,
+                    ]);
+                }
+            }
 
             // Mark quote as converted
             $quote->update([

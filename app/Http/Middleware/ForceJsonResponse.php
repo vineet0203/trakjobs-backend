@@ -12,7 +12,6 @@ class ForceJsonResponse
         // Force JSON response for all API requests
         if ($request->is('api/*') || strpos($request->path(), 'api/') === 0) {
             $request->headers->set('Accept', 'application/json');
-            $request->headers->set('Content-Type', 'application/json');
             
             // Ensure response is JSON
             $response = $next($request);

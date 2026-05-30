@@ -50,6 +50,7 @@ class Quote extends BaseModel
         'created_by',
         'updated_by',
         'converted_by',
+        'images',
     ];
 
     protected $casts = [
@@ -71,6 +72,7 @@ class Quote extends BaseModel
         'expires_at' => 'datetime',
         'converted_at' => 'datetime',
         'quote_due_date' => 'date',
+        'images' => 'array',
     ];
 
 
@@ -163,7 +165,7 @@ class Quote extends BaseModel
      */
     public function canBeEdited(): bool
     {
-        return $this->status === 'draft';
+        return in_array($this->status, ['draft', 'pending', 'rejected']);
     }
 
     /**
