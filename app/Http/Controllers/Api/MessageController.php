@@ -25,18 +25,32 @@ class MessageController extends BaseController
 
         $search = request()->query('search');
 
-        if ($search) {
-            $customers = Customer::where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->get();
-        } else {
-            $customerIds = Message::where('vendor_id', $vendorId)
-                ->select('customer_id')
-                ->distinct()
-                ->pluck('customer_id');
+        // Find customer IDs associated with this vendor's quotes, jobs, or matching client emails
+        $clientEmails = \App\Models\Client::where('vendor_id', $vendorId)->whereNotNull('email')->pluck('email');
+        $customerIdsFromJobs = \App\Models\Job::where('vendor_id', $vendorId)->whereNotNull('customer_id')->pluck('customer_id');
+        $customerIdsFromQuotes = \App\Models\Quote::where('vendor_id', $vendorId)->whereNotNull('customer_id')->pluck('customer_id');
 
-            $customers = Customer::whereIn('id', $customerIds)->get();
+        $query = Customer::query();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+            // Filter search results to only show customers associated with this vendor
+            $query->where(function ($q) use ($clientEmails, $customerIdsFromJobs, $customerIdsFromQuotes) {
+                $q->whereIn('email', $clientEmails)
+                  ->orWhereIn('id', $customerIdsFromJobs)
+                  ->orWhereIn('id', $customerIdsFromQuotes);
+            });
+        } else {
+            // Load all customers associated with this vendor
+            $query->whereIn('email', $clientEmails)
+                  ->orWhereIn('id', $customerIdsFromJobs)
+                  ->orWhereIn('id', $customerIdsFromQuotes);
         }
+
+        $customers = $query->get();
 
         $conversations = $customers->map(function ($customer) use ($vendorId) {
             $lastMessage = Message::where('vendor_id', $vendorId)
@@ -65,11 +79,19 @@ class MessageController extends BaseController
             ];
         });
 
-        // Sort conversations: those with messages first, sorted by latest message DESC
+        // Sort conversations: those with messages first (by latest message DESC), then those without messages
         $sorted = $conversations->sort(function ($a, $b) {
             $aTime = $a['last_message'] ? $a['last_message']['created_at'] : '';
             $bTime = $b['last_message'] ? $b['last_message']['created_at'] : '';
-            return strcmp($bTime, $aTime);
+            
+            if ($aTime && $bTime) {
+                return strcmp($bTime, $aTime);
+            }
+            if ($aTime) return -1;
+            if ($bTime) return 1;
+            
+            // If neither has messages, sort alphabetically by name
+            return strcmp($a['name'], $b['name']);
         })->values();
 
         return $this->successResponse($sorted, 'Conversations retrieved successfully.');
