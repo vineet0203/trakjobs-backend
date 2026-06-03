@@ -18,3 +18,9 @@ node_modules/
 Thumbs.db
 .env.*
 /public/hot
+
+# Temp/Backup files
+*.bak
+*.tmp
+deploy.sh
+[
