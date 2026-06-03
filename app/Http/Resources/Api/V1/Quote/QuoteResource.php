@@ -94,9 +94,7 @@ class QuoteResource extends JsonResource
                 if (filter_var($path, FILTER_VALIDATE_URL)) {
                     return $path;
                 }
-                $signedUrlService = app(\App\Services\File\SignedUrlService::class);
-                $result = $signedUrlService->generateTemporarySignedUrl($path, 60);
-                return $result['url'] ?? null;
+                return url('storage/' . $path);
             })->filter()->values()->all(),
         ];
     }
