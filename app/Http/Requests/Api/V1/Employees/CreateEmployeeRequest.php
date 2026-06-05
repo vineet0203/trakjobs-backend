@@ -68,7 +68,7 @@ class CreateEmployeeRequest extends FormRequest
                 'nullable',
                 'integer',
                 'min:1',
-                Rule::exists('employees', 'id')->where(
+                Rule::exists('users', 'id')->where(
                     fn($q) => $q->where('vendor_id', $vendorId)
                         ->where('is_active', true)
                 ),

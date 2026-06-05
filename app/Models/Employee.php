@@ -62,7 +62,7 @@ class Employee extends BaseModel implements JWTSubject
      */
     public function reportingManager(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'reporting_manager_id');
+        return $this->belongsTo(User::class, 'reporting_manager_id');
     }
 
     /**

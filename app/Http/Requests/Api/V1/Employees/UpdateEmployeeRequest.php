@@ -88,11 +88,10 @@ class UpdateEmployeeRequest extends FormRequest
             'reporting_manager_id' => [
                 'nullable',
                 'integer',
-                'min:1', // Added positive validation to match frontend
-                Rule::exists('employees', 'id')->where(
+                'min:1',
+                Rule::exists('users', 'id')->where(
                     fn($q) => $q->where('vendor_id', $vendorId)
                         ->where('is_active', true)
-                        ->where('id', '!=', $employeeId) // Can't report to themselves
                 ),
             ],
             'role' => 'nullable|in:admin,manager,employee,supervisor',
