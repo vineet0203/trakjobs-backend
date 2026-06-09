@@ -94,9 +94,9 @@ Route::prefix('auth')->group(function () {
 Route::prefix('public')->group(function () {
     Route::post('bookings', [PublicBookingController::class, 'store']);
     Route::get('vendors', [PublicBookingController::class, 'getVendors']);
-    Route::get('service-categories', [ServiceCategoryController::class, 'index']);
 });
 
+Route::get('service-categories', [ServiceCategoryController::class, 'index']);
 
 Route::post('/chat/auth', [MessageController::class, 'broadcastAuth']);
 
