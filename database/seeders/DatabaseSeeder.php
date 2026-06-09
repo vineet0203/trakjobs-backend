@@ -9,6 +9,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+
         $this->call([
             SystemUserSeeder::class,
             SystemDataSeeder::class,
@@ -18,5 +20,7 @@ class DatabaseSeeder extends Seeder
             ServiceCategorySeeder::class,
             ServicesSeeder::class,
         ]);
+
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
     }
 }

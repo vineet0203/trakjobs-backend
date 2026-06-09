@@ -105,7 +105,7 @@ class ServiceController extends BaseController
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'subtitle' => 'nullable|string|max:255',
-                'image' => 'nullable|string|url|max:2048',
+                'image' => 'nullable|string|max:2048',
                 'category' => 'required|string|max:255',
                 'sub_category_id' => 'nullable|integer|exists:service_sub_categories,id',
                 'sub_category' => 'nullable|string|max:255',
@@ -148,7 +148,7 @@ class ServiceController extends BaseController
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'subtitle' => 'nullable|string|max:255',
-                'image' => 'nullable|string|url|max:2048',
+                'image' => 'nullable|string|max:2048',
                 'category' => 'required|string|max:255',
                 'sub_category_id' => 'nullable|integer|exists:service_sub_categories,id',
                 'sub_category' => 'nullable|string|max:255',

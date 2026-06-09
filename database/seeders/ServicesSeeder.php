@@ -114,6 +114,28 @@ class ServicesSeeder extends Seeder
         ];
 
         foreach ($services as $service) {
+            $category = \App\Models\ServiceCategory::where('name', $service['category'])->first();
+            if ($category) {
+                $subName = null;
+                if ($service['title'] === 'Plumbing Services') $subName = 'Plumbing';
+                elseif ($service['title'] === 'Cleaning Services') $subName = 'Cleaning';
+                elseif ($service['title'] === 'AC Repair & Maintenance') $subName = 'AC Repair';
+                elseif ($service['title'] === 'Car Washing') $subName = 'Car Washing';
+                elseif ($service['title'] === 'Electrical Services') $subName = 'Electrical';
+                elseif ($service['title'] === 'Painting Services') $subName = 'Painting';
+                elseif ($service['title'] === 'Moving Services') $subName = 'Moving';
+
+                if ($subName) {
+                    $subCat = \App\Models\ServiceSubCategory::where('service_category_id', $category->id)
+                        ->where('name', $subName)
+                        ->first();
+                    if ($subCat) {
+                        $service['sub_category_id'] = $subCat->id;
+                        $service['sub_category'] = $subCat->name;
+                    }
+                }
+            }
+
             Service::updateOrCreate(
                 ['title' => $service['title']],
                 $service

@@ -67,6 +67,10 @@ trait ApiResponse
         // Get the collection's array representation
         $collectionArray = $collection->toArray(request());
 
+        if (!isset($collectionArray['data'])) {
+            $collectionArray = ['data' => $collectionArray];
+        }
+
         // Merge the collection's structure directly into the response
         $response = array_merge($response, $collectionArray);
 

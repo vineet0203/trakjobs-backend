@@ -78,6 +78,44 @@ class RegistrationService
             $availabilityDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         }
 
+        $categoryInput = $data['service_category'] ?? null;
+        $subCategoryInput = $data['service_sub_category'] ?? null;
+        $categorySlug = $categoryInput;
+        $subCategorySlug = $subCategoryInput;
+
+        if ($categoryInput) {
+            $dbCat = \App\Models\ServiceCategory::where('name', $categoryInput)
+                ->orWhere('slug', $categoryInput)
+                ->first();
+            if ($dbCat) {
+                $categorySlug = $dbCat->slug;
+            } else {
+                $categorySlug = \Illuminate\Support\Str::slug($categoryInput);
+            }
+        }
+
+        if ($subCategoryInput) {
+            $dbSub = null;
+            if (isset($dbCat)) {
+                $dbSub = \App\Models\ServiceSubCategory::where('service_category_id', $dbCat->id)
+                    ->where(function($q) use ($subCategoryInput) {
+                        $q->where('name', $subCategoryInput)
+                          ->orWhere('slug', $subCategoryInput);
+                    })->first();
+            }
+            if (!$dbSub) {
+                $dbSub = \App\Models\ServiceSubCategory::where('name', $subCategoryInput)
+                    ->orWhere('slug', $subCategoryInput)
+                    ->first();
+            }
+
+            if ($dbSub) {
+                $subCategorySlug = $dbSub->slug;
+            } else {
+                $subCategorySlug = \Illuminate\Support\Str::slug($subCategoryInput);
+            }
+        }
+
         $vendorData = [
             'business_name' => $data['business_name'],
             'website_name' => $data['website_name'],
@@ -86,8 +124,8 @@ class RegistrationService
             'mobile_number' => $data['mobile_number'],
             'business_type' => $data['business_type'],
             'service_description' => $data['service_description'] ?? null,
-            'service_category' => $data['service_category'] ?? null,
-            'service_sub_category' => $data['service_sub_category'] ?? null,
+            'service_category' => $categorySlug,
+            'service_sub_category' => $subCategorySlug,
             'service_category_custom' => $data['service_category_custom'] ?? null,
             'service_sub_category_custom' => $data['service_sub_category_custom'] ?? null,
             'availability_type' => $availabilityType,
