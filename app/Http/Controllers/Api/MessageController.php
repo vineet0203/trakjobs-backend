@@ -164,7 +164,7 @@ class MessageController extends BaseController
     /**
      * Mark all messages in a conversation as read.
      */
-    public function markAsRead($customerId): JsonResponse
+    public function markAsRead(): JsonResponse
     {
         $customerData = request()->attributes->get('customer');
         if ($customerData) {
