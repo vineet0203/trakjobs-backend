@@ -92,6 +92,14 @@ class VendorManagementController extends BaseController
         $owner = User::find($vendor->user_id);
         $vendor->owner = $owner;
 
+        $category = \App\Models\ServiceCategory::where('slug', $vendor->service_category)->first();
+        $vendor->service_category_slug = $vendor->service_category;
+        $vendor->service_category = $category ? $category->name : $vendor->service_category;
+
+        $subCategory = \App\Models\ServiceSubCategory::where('slug', $vendor->service_sub_category)->first();
+        $vendor->service_sub_category_slug = $vendor->service_sub_category;
+        $vendor->service_sub_category = $subCategory ? $subCategory->name : $vendor->service_sub_category;
+
         // Get stats
         $vendor->employee_count = Employee::where('vendor_id', $vendor->id)->count();
 

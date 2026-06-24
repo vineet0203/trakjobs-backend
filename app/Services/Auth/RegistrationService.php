@@ -122,6 +122,12 @@ class RegistrationService
             'full_name' => $data['full_name'], // Store full name in vendor table
             'email' => $data['email'], // Store email in vendor table
             'mobile_number' => $data['mobile_number'],
+            'address_line1' => $data['address_line1'] ?? null,
+            'address_line2' => $data['address_line2'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state' => $data['state'] ?? null,
+            'zip_code' => $data['zip_code'] ?? null,
+            'country' => $data['country'] ?? null,
             'business_type' => $data['business_type'],
             'service_description' => $data['service_description'] ?? null,
             'service_category' => $categorySlug,
@@ -137,6 +143,7 @@ class RegistrationService
         ];
 
         $vendor = Vendor::create($vendorData);
+        $vendor->update(['vendor_id_code' => 'VEN-' . (10000 + $vendor->id)]);
 
         Log::info('✅ Vendor business created successfully', [
             'vendor_id' => $vendor->id,
