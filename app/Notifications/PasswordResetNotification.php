@@ -46,7 +46,7 @@ class PasswordResetNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable): MailMessage
     {
-        $appName = config('app.name', 'TrackJobs');
+        $appName = config('app.name', 'TrakJobs');
 
         // Use the specific frontend reset URL from config
         $resetUrl = $this->buildResetUrl();
@@ -62,7 +62,7 @@ class PasswordResetNotification extends Notification implements ShouldQueue
                 'appName' => $appName,
                 'expireMinutes' => $expireMinutes,
                 'currentYear' => date('Y'),
-                'supportEmail' => config('notifications.admin.email', config('mail.from.address', 'support@trackjobs.com')),
+                'supportEmail' => config('notifications.admin.email', config('mail.from.address', 'support@trakjobs.com')),
                 'ipAddress' => request()->ip(),
                 'userAgent' => request()->header('User-Agent', 'Unknown'),
             ]);
@@ -95,7 +95,7 @@ class PasswordResetNotification extends Notification implements ShouldQueue
     {
         $queryParams = http_build_query([
             'token' => $this->token,
-            'email' => urlencode($this->user->email),
+            'email' => $this->user->email,
         ]);
 
         // Check if URL already has query string

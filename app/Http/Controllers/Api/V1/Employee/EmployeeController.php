@@ -66,10 +66,11 @@ class EmployeeController extends BaseController
 
             $plainToken = Str::random(60);
 
-            DB::table('password_reset_tokens')->updateOrInsert(
+            DB::table('employee_password_resets')->updateOrInsert(
                 ['email' => $employee->email],
                 [
                     'token' => Hash::make($plainToken),
+                    'expires_at' => now()->addHours(48),
                     'created_at' => now(),
                 ]
             );
@@ -86,7 +87,7 @@ class EmployeeController extends BaseController
                     'resetUrl' => $setupLink,
                 ], function ($message) use ($employee) {
                     $message->to($employee->email)
-                        ->subject('Set your password - ' . config('app.name', 'TrackJobs'));
+                        ->subject('Set your password - ' . config('app.name', 'TrakJobs'));
                 });
             } catch (\Throwable $mailException) {
                 $emailSent = false;

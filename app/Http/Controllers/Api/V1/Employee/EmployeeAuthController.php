@@ -91,7 +91,7 @@ class EmployeeAuthController extends BaseController
         $token = bin2hex(random_bytes(32));
         $expiresAt = now()->addMinutes(30);
 
-        DB::table('password_resets')->updateOrInsert(
+        DB::table('employee_password_resets')->updateOrInsert(
             ['email' => $employee->email],
             [
                 'token' => $token,
@@ -109,7 +109,7 @@ class EmployeeAuthController extends BaseController
                 'resetUrl' => $resetUrl,
             ], function ($message) use ($employee) {
                 $message->to($employee->email)
-                    ->subject('Reset your password - ' . config('app.name', 'TrackJobs'));
+                    ->subject('Reset your password - ' . config('app.name', 'TrakJobs'));
             });
         } catch (\Throwable $exception) {
             Log::error('Employee reset password email failed to send.', [
@@ -132,7 +132,7 @@ class EmployeeAuthController extends BaseController
             return $this->validationErrorResponse($validator->errors()->toArray());
         }
 
-        $resetRow = DB::table('password_resets')
+        $resetRow = DB::table('employee_password_resets')
             ->where('token', $request->token)
             ->first();
 
@@ -141,21 +141,21 @@ class EmployeeAuthController extends BaseController
         }
 
         if (now()->greaterThan(Carbon::parse($resetRow->expires_at))) {
-            DB::table('password_resets')->where('token', $request->token)->delete();
+            DB::table('employee_password_resets')->where('token', $request->token)->delete();
             return $this->errorResponse('Reset token has expired.', 400);
         }
 
         $employee = Employee::where('email', $resetRow->email)->first();
 
         if (!$employee) {
-            DB::table('password_resets')->where('token', $request->token)->delete();
+            DB::table('employee_password_resets')->where('token', $request->token)->delete();
             return $this->notFoundResponse('Employee not found for reset token.');
         }
 
         $employee->password = Hash::make($request->password);
         $employee->save();
 
-        DB::table('password_resets')->where('token', $request->token)->delete();
+        DB::table('employee_password_resets')->where('token', $request->token)->delete();
 
         return $this->successResponse(null, 'Password reset successful.');
     }
@@ -172,7 +172,7 @@ class EmployeeAuthController extends BaseController
             return $this->validationErrorResponse($validator->errors()->toArray());
         }
 
-        $tokenRow = DB::table('password_reset_tokens')
+        $tokenRow = DB::table('employee_password_resets')
             ->where('email', $request->email)
             ->first();
 
@@ -182,7 +182,7 @@ class EmployeeAuthController extends BaseController
 
         $isExpired = Carbon::parse($tokenRow->created_at)->lt(now()->subMinutes(60));
         if ($isExpired) {
-            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            DB::table('employee_password_resets')->where('email', $request->email)->delete();
             return $this->errorResponse('Setup token has expired.', 400);
         }
 
@@ -192,14 +192,14 @@ class EmployeeAuthController extends BaseController
 
         $employee = Employee::where('email', $request->email)->first();
         if (!$employee) {
-            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            DB::table('employee_password_resets')->where('email', $request->email)->delete();
             return $this->notFoundResponse('Employee not found.');
         }
 
         $employee->password = Hash::make($request->password);
         $employee->save();
 
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        DB::table('employee_password_resets')->where('email', $request->email)->delete();
 
         return $this->successResponse(null, 'Password set successfully. You can now log in.');
     }

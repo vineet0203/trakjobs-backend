@@ -289,7 +289,7 @@ class QuoteUpdateService
                         'loginUrl' => $loginUrl,
                     ], function ($message) use ($customer, $fresh) {
                         $message->to($customer->email)
-                            ->subject('Updated Quotation #' . $fresh->quote_number . ' - ' . config('app.name', 'TrackJobs'));
+                            ->subject('Updated Quotation #' . $fresh->quote_number . ' - ' . config('app.name', 'TrakJobs'));
                     });
 
                     Log::info('Quote update email notification sent to customer', [

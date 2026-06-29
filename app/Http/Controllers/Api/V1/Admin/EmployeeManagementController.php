@@ -103,6 +103,11 @@ class EmployeeManagementController extends BaseController
         $vendorId = $request->input('vendor_id');
 
         try {
+            // Check cross-role email conflict (Vendor)
+            if (DB::table('users')->where('email', $request->input('email'))->exists()) {
+                return $this->errorResponse('This email is already registered as a Vendor.', 422);
+            }
+
             // Check cross-role email conflict (Customer)
             if (DB::table('customers')->where('email', $request->input('email'))->exists()) {
                 return $this->errorResponse('This email is already registered as a Customer.', 422);
@@ -120,10 +125,11 @@ class EmployeeManagementController extends BaseController
 
             // Generate password setup token
             $plainToken = Str::random(60);
-            DB::table('password_reset_tokens')->updateOrInsert(
+            DB::table('employee_password_resets')->updateOrInsert(
                 ['email' => $employee->email],
                 [
                     'token' => Hash::make($plainToken),
+                    'expires_at' => now()->addHours(48),
                     'created_at' => now(),
                 ]
             );
@@ -138,7 +144,7 @@ class EmployeeManagementController extends BaseController
                     'resetUrl' => $setupLink,
                 ], function ($message) use ($employee) {
                     $message->to($employee->email)
-                        ->subject('Set your password - ' . config('app.name', 'TrackJobs'));
+                        ->subject('Set your password - ' . config('app.name', 'TrakJobs'));
                 });
             } catch (\Throwable $mailException) {
                 $emailSent = false;
@@ -266,7 +272,11 @@ class EmployeeManagementController extends BaseController
             ]);
 
             // Try to find if there is an associated user (or send directly to employee email)
-            Mail::raw("Hello,\n\nAn administrator has manually reset your password for TrakJobs Employee Portal.\nYour new password is: {$newPassword}\n\nYou can log in using this new password.", function ($message) use ($employee) {
+            Mail::raw("Hello,
+
+An administrator has reset your password for TrakJobs Employee Portal. Please login and change your password immediately.
+
+If you did not request this, contact support immediately.", function ($message) use ($employee) {
                 $message->to($employee->email)->subject('TrakJobs - Admin Password Reset');
             });
 

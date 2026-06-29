@@ -504,7 +504,7 @@ class PasswordService
 
             if ($success && $token) {
                 // Delete the used reset token from Laravel's password_reset_tokens table
-                DB::table('password_reset_tokens')
+                DB::table('vendor_password_resets')
                     ->where('email', $user->email)
                     ->delete();
 
@@ -552,7 +552,7 @@ class PasswordService
      */
     public function validatePasswordResetToken(User $user, string $token): bool
     {
-        $record = DB::table('password_reset_tokens')
+        $record = DB::table('vendor_password_resets')
             ->where('email', $user->email)
             ->first();
 
@@ -563,7 +563,7 @@ class PasswordService
         // Check if token is expired (older than 24 hours)
         if (now()->subHours(24)->gt($record->created_at)) {
             // Clean up expired token
-            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+            DB::table('vendor_password_resets')->where('email', $user->email)->delete();
             return false;
         }
 

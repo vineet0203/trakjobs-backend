@@ -35,7 +35,11 @@ class CustomerManagementController extends BaseController
                 'password' => Hash::make($newPassword)
             ]);
 
-            Mail::raw("Hello,\n\nAn administrator has manually reset your password for TrakJobs Customer Portal.\nYour new password is: {$newPassword}\n\nYou can log in using this new password.", function ($message) use ($customer) {
+            Mail::raw("Hello,
+
+An administrator has reset your password for TrakJobs Customer Portal. Please login and change your password immediately.
+
+If you did not request this, contact support immediately.", function ($message) use ($customer) {
                 $message->to($customer->email)->subject('TrakJobs - Admin Password Reset');
             });
 

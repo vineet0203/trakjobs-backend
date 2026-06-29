@@ -42,18 +42,7 @@ class UpdateClientRequest extends FormRequest
         $vendorId = auth()->user()->vendor_id;
         $clientId = $this->route('clientId');
         $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        $allowedCategories = [
-            'home_repair',
-            'electrical',
-            'plumbing',
-            'painting_wall',
-            'carpentry',
-            'cleaning',
-            'appliance',
-            'outdoor',
-            'smart_home',
-            'moving_support'
-        ];
+        $allowedCategories = \App\Models\ServiceCategory::pluck('slug')->toArray();
 
         $rules = [
             /*
@@ -130,7 +119,7 @@ class UpdateClientRequest extends FormRequest
             'business_type' => [
                 'nullable',
                 'exclude_unless:client_type,commercial',
-                'in:sole_proprietorship,partnership,corporation,non_profit,government,other'
+                'in:sole_proprietor,partnership,private_limited,public_limited,llp,cooperative,ngo,government,other'
             ],
 
             'industry' => [
@@ -258,7 +247,9 @@ class UpdateClientRequest extends FormRequest
 
         // Handle payment currency case
         if ($this->has('payment') && isset($this->payment['preferred_currency'])) {
-            $data['preferred_currency'] = strtolower($this->payment['preferred_currency']);
+            $payment = $this->payment;
+            $payment['preferred_currency'] = strtolower($payment['preferred_currency']);
+            $data['payment'] = $payment;
         }
 
         // Handle availability schedule

@@ -36,7 +36,7 @@ class CustomerAuthController extends BaseController
         $token = bin2hex(random_bytes(32));
         $expiresAt = now()->addMinutes(30);
 
-        DB::table('password_resets')->updateOrInsert(
+        DB::table('customer_password_resets')->updateOrInsert(
             ['email' => $customer->email],
             [
                 'token' => $token,
@@ -54,7 +54,7 @@ class CustomerAuthController extends BaseController
                 'resetUrl' => $resetUrl,
             ], function ($message) use ($customer) {
                 $message->to($customer->email)
-                    ->subject('Reset your password - ' . config('app.name', 'TrackJobs'));
+                    ->subject('Reset your password - ' . config('app.name', 'TrakJobs'));
             });
         } catch (\Throwable $exception) {
             Log::error('Customer reset password email failed to send.', [
@@ -70,7 +70,7 @@ class CustomerAuthController extends BaseController
     {
         $validated = $request->validated();
 
-        $resetRow = DB::table('password_resets')
+        $resetRow = DB::table('customer_password_resets')
             ->where('token', $validated['token'])
             ->first();
 
@@ -79,21 +79,21 @@ class CustomerAuthController extends BaseController
         }
 
         if (now()->greaterThan(Carbon::parse($resetRow->expires_at))) {
-            DB::table('password_resets')->where('token', $validated['token'])->delete();
+            DB::table('customer_password_resets')->where('token', $validated['token'])->delete();
             return $this->errorResponse('Reset token has expired.', 400);
         }
 
         $customer = Customer::where('email', $resetRow->email)->first();
 
         if (!$customer) {
-            DB::table('password_resets')->where('token', $validated['token'])->delete();
+            DB::table('customer_password_resets')->where('token', $validated['token'])->delete();
             return $this->notFoundResponse('Customer not found for reset token.');
         }
 
         $customer->password = Hash::make($validated['password']);
         $customer->save();
 
-        DB::table('password_resets')->where('token', $validated['token'])->delete();
+        DB::table('customer_password_resets')->where('token', $validated['token'])->delete();
 
         return $this->successResponse(null, 'Password reset successful.');
     }

@@ -150,6 +150,11 @@ class RegistrationValidationService
             throw new \Exception('Email "' . $data['email'] . '" is already registered');
         }
 
+        // Check if email already exists as employee
+        if (\App\Models\Employee::where('email', $data['email'])->exists()) {
+            throw new \Exception('This email is already registered as an Employee. Vendor and Employee cannot be the same.');
+        }
+
         // Check if mobile number already exists in vendor table (optional)
         if (Vendor::where('mobile_number', $data['mobile_number'])->exists()) {
             throw new \Exception('Mobile number "' . $data['mobile_number'] . '" is already registered');

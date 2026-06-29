@@ -197,8 +197,15 @@ class VendorManagementController extends BaseController
                 'deactivation_reason' => 'Suspended by admin due to vendor deletion'
             ]);
 
+            // Deactivate all linked employees
+            \App\Models\Employee::where('vendor_id', $vendor->id)->update([
+                'is_active' => false,
+                'deleted_at' => now(),
+                'deleted_by' => auth()->id()
+            ]);
+
             DB::commit();
-            return $this->successResponse(null, 'Vendor and all associated users deleted successfully');
+            return $this->successResponse(null, 'Vendor, users and employees deactivated successfully');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to soft delete vendor', ['id' => $id, 'error' => $e->getMessage()]);
@@ -291,7 +298,11 @@ class VendorManagementController extends BaseController
             $owner->save();
 
             // Send email
-            Mail::raw("Hello,\n\nAn administrator has manually reset your password for TrakJobs.\nYour new password is: {$newPassword}\n\nYou can log in directly using this new password.", function ($message) use ($owner) {
+            Mail::raw("Hello,
+
+An administrator has reset your password for TrakJobs Vendor Portal. Please login and change your password immediately.
+
+If you did not request this, contact support immediately.", function ($message) use ($owner) {
                 $message->to($owner->email)->subject('TrakJobs - Admin Password Reset');
             });
 
@@ -422,7 +433,7 @@ class VendorManagementController extends BaseController
 
             // Generate password setup token
             $plainToken = Str::random(60);
-            DB::table('password_reset_tokens')->updateOrInsert(
+            DB::table('vendor_password_resets')->updateOrInsert(
                 ['email' => $employee->email],
                 [
                     'token' => Hash::make($plainToken),
@@ -440,7 +451,7 @@ class VendorManagementController extends BaseController
                     'resetUrl' => $setupLink,
                 ], function ($message) use ($employee) {
                     $message->to($employee->email)
-                        ->subject('Set your password - ' . config('app.name', 'TrackJobs'));
+                        ->subject('Set your password - ' . config('app.name', 'TrakJobs'));
                 });
             } catch (\Throwable $mailException) {
                 $emailSent = false;

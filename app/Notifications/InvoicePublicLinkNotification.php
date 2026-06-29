@@ -49,7 +49,7 @@ class InvoicePublicLinkNotification extends Notification implements ShouldQueue
                 'invoice' => $this->invoice,
                 'publicUrl' => $this->publicUrl,
                 'expiresAt' => $this->expiresAt,
-                'appName' => config('app.name', 'TrackJobs'),
+                'appName' => config('app.name', 'TrakJobs'),
                 'currentYear' => date('Y'),
             ]);
     }

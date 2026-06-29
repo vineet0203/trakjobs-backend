@@ -43,7 +43,7 @@ class DeploymentStatusNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable): MailMessage
     {
-        $appName = config('app.name', 'TrackJobs');
+        $appName = config('app.name', 'TrakJobs');
         $environment = $this->deploymentData['environment'] ?? app()->environment();
 
         $subject = $this->deploymentData['success']

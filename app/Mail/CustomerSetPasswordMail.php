@@ -25,7 +25,7 @@ class CustomerSetPasswordMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Set your customer account password - ' . config('app.name', 'TrackJobs'),
+            subject: 'Set your customer account password - ' . config('app.name', 'TrakJobs'),
         );
     }
 

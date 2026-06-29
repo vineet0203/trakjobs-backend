@@ -52,10 +52,11 @@ class CustomerAccountService
 
         $plainToken = Str::random(64);
 
-        DB::table('password_reset_tokens')->updateOrInsert(
+        DB::table('customer_password_resets')->updateOrInsert(
             ['email' => $customer->email],
             [
                 'token' => Hash::make($plainToken),
+                'expires_at' => now()->addHours(48),
                 'created_at' => now(),
             ]
         );
@@ -71,7 +72,7 @@ class CustomerAccountService
                 'resetUrl' => $setupLink,
             ], function ($message) use ($customer) {
                 $message->to($customer->email)
-                    ->subject('Set your password - ' . config('app.name', 'TrackJobs'));
+                    ->subject('Set your password - ' . config('app.name', 'TrakJobs'));
             });
 
             Log::info('Customer first-time password setup link sent.', [
@@ -102,7 +103,7 @@ class CustomerAccountService
 
     public function setPassword(string $email, string $token, string $password): void
     {
-        $tokenRow = DB::table('password_reset_tokens')
+        $tokenRow = DB::table('customer_password_resets')
             ->where('email', $email)
             ->first();
 
@@ -112,7 +113,7 @@ class CustomerAccountService
 
         $createdAt = Carbon::parse($tokenRow->created_at);
         if ($createdAt->lt(now()->subMinutes(self::SETUP_TOKEN_EXPIRY_MINUTES))) {
-            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            DB::table('customer_password_resets')->where('email', $email)->delete();
             throw new HttpException(400, 'Setup token has expired.');
         }
 
@@ -122,7 +123,7 @@ class CustomerAccountService
 
         $customer = Customer::where('email', $email)->first();
         if (!$customer) {
-            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            DB::table('customer_password_resets')->where('email', $email)->delete();
             throw new HttpException(404, 'Customer not found.');
         }
 
@@ -130,7 +131,7 @@ class CustomerAccountService
         $customer->email_verified_at = now();
         $customer->save();
 
-        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        DB::table('customer_password_resets')->where('email', $email)->delete();
     }
 
     public function login(string $email, string $password): array

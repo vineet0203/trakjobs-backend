@@ -18,18 +18,7 @@ class CreateClientRequest extends FormRequest
         // Get vendor_id from authenticated user
         $vendorId = auth()->user()->vendor_id;
         $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        $allowedCategories = [
-            'home_repair',
-            'electrical',
-            'plumbing',
-            'painting_wall',
-            'carpentry',
-            'cleaning',
-            'appliance',
-            'outdoor',
-            'smart_home',
-            'moving_support'
-        ];
+        $allowedCategories = \App\Models\ServiceCategory::pluck('slug')->toArray();
 
         $rules = [
             /*
@@ -50,7 +39,7 @@ class CreateClientRequest extends FormRequest
                 'email',
                 'max:191',
                 Rule::unique('clients')->where(
-                    fn($q) => $q->where('vendor_id', $vendorId)
+                    fn($q) => $q->where('vendor_id', $vendorId)->whereNull('deleted_at')
                 ),
             ],
             'mobile_number' => 'required|string|max:20',
@@ -100,7 +89,7 @@ class CreateClientRequest extends FormRequest
                 'max:191',
                 'exclude_unless:client_type,commercial',
                 Rule::unique('clients')->where(
-                    fn($q) => $q->where('vendor_id', $vendorId)
+                    fn($q) => $q->where('vendor_id', $vendorId)->whereNull('deleted_at')
                 ),
             ],
 
@@ -108,7 +97,7 @@ class CreateClientRequest extends FormRequest
                 'required_if:client_type,commercial',
                 'nullable',
                 'exclude_unless:client_type,commercial',
-                'in:sole_proprietorship,partnership,corporation,non_profit,government,other'
+                'in:sole_proprietor,partnership,private_limited,public_limited,llp,cooperative,ngo,government,other'
             ],
 
             'industry' => [
@@ -246,7 +235,9 @@ class CreateClientRequest extends FormRequest
 
         // Handle payment currency case
         if ($this->has('payment') && isset($this->payment['preferred_currency'])) {
-            $data['preferred_currency'] = strtolower($this->payment['preferred_currency']);
+            $payment = $this->payment;
+            $payment['preferred_currency'] = strtolower($payment['preferred_currency']);
+            $data['payment'] = $payment;
         }
 
         // Handle availability schedule

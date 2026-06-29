@@ -51,10 +51,10 @@ class DeploymentController extends Controller
         $payload = $request->json()->all();
 
         // 3. Verify repository
-        if (($payload['repository']['full_name'] ?? '') !== 'rajpootsourabh/trackjobs-backend') {
+        if (($payload['repository']['full_name'] ?? '') !== 'vineet0203/trakjobs-backend') {
             Log::warning('Webhook from wrong repository', [
                 'repository' => $payload['repository']['full_name'] ?? 'unknown',
-                'expected' => 'rajpootsourabh/trackjobs-backend',
+                'expected' => 'vineet0203/trakjobs-backend',
             ]);
             return response()->json(['error' => 'Invalid repository'], 403);
         }
@@ -624,7 +624,7 @@ class DeploymentController extends Controller
                 'ref' => 'refs/heads/main',
                 'head_commit' => ['id' => 'rollback-' . time()],
                 'pusher' => ['name' => 'rollback'],
-                'repository' => ['full_name' => 'rajpootsourabh/trackjobs-backend'],
+                'repository' => ['full_name' => 'vineet0203/trakjobs-backend'],
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -867,7 +867,7 @@ class DeploymentController extends Controller
             'ref' => 'refs/heads/main',
             'head_commit' => ['id' => 'manual-trigger-' . time()],
             'pusher' => ['name' => 'manual-' . $request->ip()],
-            'repository' => ['full_name' => 'rajpootsourabh/trackjobs-backend'],
+            'repository' => ['full_name' => 'vineet0203/trakjobs-backend'],
         ]);
     }
 
@@ -894,7 +894,7 @@ class DeploymentController extends Controller
                 'rate_limiting' => 'via nginx/middleware',
             ],
             'methods' => ['POST' => 'webhooks', 'GET' => 'verification'],
-            'repository' => 'rajpootsourabh/trackjobs-backend',
+            'repository' => 'vineet0203/trakjobs-backend',
             'timestamp' => now()->toDateTimeString(),
         ]);
     }

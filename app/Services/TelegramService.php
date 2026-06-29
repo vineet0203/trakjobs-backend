@@ -67,7 +67,7 @@ class TelegramService
             $commitId = substr($data['commit']['id'], 0, 8);
         }
         
-        $commitUrl = "https://github.com/rajpootsourabh/trackjobs-backend/commit/{$commitId}";
+        $commitUrl = "https://github.com/vineet0203/trakjobs-backend/commit/{$commitId}";
         
         // Get commit message safely
         $commitMessage = isset($data['commit']['message']) ? $data['commit']['message'] : 'no message';

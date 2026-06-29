@@ -256,7 +256,7 @@ class QuoteCreationService
                         'loginUrl' => $loginUrl,
                     ], function ($message) use ($customer, $fresh) {
                         $message->to($customer->email)
-                            ->subject('New Quotation #' . $fresh->quote_number . ' - ' . config('app.name', 'TrackJobs'));
+                            ->subject('New Quotation #' . $fresh->quote_number . ' - ' . config('app.name', 'TrakJobs'));
                     });
 
                     Log::info('Quote email notification sent to customer', [
