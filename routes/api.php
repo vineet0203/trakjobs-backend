@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\V1\ServiceCategoryController;
 use App\Http\Controllers\Api\V1\ServiceSubCategoryController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\V1\Verification\VerificationController;
 use App\Services\RequestAnalyticsService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -116,7 +117,7 @@ Route::prefix('customer')->group(function () {
     Route::post('reset-password', [CustomerAuthController::class, 'resetPassword']);
 });
 
-Route::middleware(['employee.jwt'])->prefix('employee')->group(function () {
+Route::middleware(['employee.jwt', 'verified.account'])->prefix('employee')->group(function () {
     Route::get('me', [EmployeeAuthController::class, 'me']);
 
     Route::get('dashboard', [TimeTrackingController::class, 'dashboard']);
@@ -129,7 +130,7 @@ Route::middleware(['employee.jwt'])->prefix('employee')->group(function () {
     Route::put('time-entry/{id}', [TimeTrackingController::class, 'updateTimeEntry']);
 });
 
-Route::middleware(['customer.jwt'])->prefix('customer')->group(function () {
+Route::middleware(['customer.jwt', 'verified.account'])->prefix('customer')->group(function () {
     // Customer Messaging routes
     Route::get('messages', [MessageController::class, 'getCustomerConversations']);
     Route::post('messages/send', [MessageController::class, 'sendMessage']);
@@ -164,7 +165,7 @@ Route::middleware(['customer.jwt'])->prefix('customer')->group(function () {
 // ============================================
 // PROTECTED ROUTES - REQUIRE AUTHENTICATION
 // ============================================
-Route::middleware(['jwt.verify'])->group(function () {
+Route::middleware(['jwt.verify', 'verified.account'])->group(function () {
 
     // Authenticated Services Route for Vendors
     Route::get('services', [ServiceController::class, 'index']);
@@ -464,6 +465,18 @@ Route::middleware(['jwt.verify'])->group(function () {
         Route::get('/assigned', [OnboardingController::class, 'listAssigned']);
         Route::get('/download/{id}', [OnboardingController::class, 'download']);
     });
+});
+
+// ============================================
+// VERIFICATION FLOW ROUTES (PROTECTED)
+// ============================================
+Route::middleware(['any.jwt', 'verified.account'])->prefix('verification')->group(function () {
+    Route::get('/progress', [VerificationController::class, 'getProgress']);
+    Route::post('/progress', [VerificationController::class, 'saveProgress']);
+    Route::post('/document/upload', [VerificationController::class, 'uploadDocument']);
+    Route::get('/document/view', [VerificationController::class, 'viewDocument']);
+    Route::post('/otp/send', [VerificationController::class, 'sendOtp']);
+    Route::post('/otp/verify', [VerificationController::class, 'verifyOtp']);
 });
 
 // ============================================

@@ -68,6 +68,7 @@ class EmployeeAuthController extends BaseController
                 'vendor_id' => $employee->vendor_id,
                 'name' => $employee->name ?: trim(($employee->first_name ?? '') . ' ' . ($employee->last_name ?? '')),
                 'email' => $employee->email,
+                'verification_status' => $employee->verification_status,
             ],
         ], 'Employee login successful.');
     }

@@ -173,6 +173,7 @@ class CustomerAccountService
                 'email' => $customer->email,
                 'phone' => $customer->phone,
                 'role' => $customer->role,
+                'verification_status' => $customer->verification_status,
                 'status' => $customer->status,
             ],
         ];

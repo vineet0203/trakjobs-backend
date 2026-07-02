@@ -50,4 +50,9 @@ class Customer extends Model implements JWTSubject
     {
         return $this->hasMany(Message::class);
     }
+
+    public function verificationProfile()
+    {
+        return $this->morphOne(VerificationProfile::class, 'authenticatable');
+    }
 }

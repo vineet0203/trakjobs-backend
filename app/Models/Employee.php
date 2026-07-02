@@ -143,4 +143,9 @@ class Employee extends BaseModel implements JWTSubject
             'scope' => 'employee',
         ];
     }
+
+    public function verificationProfile()
+    {
+        return $this->morphOne(VerificationProfile::class, 'authenticatable');
+    }
 }

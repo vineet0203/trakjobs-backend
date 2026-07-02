@@ -83,6 +83,8 @@ class Kernel extends HttpKernel
         'jwt.verify' => \App\Http\Middleware\JwtMiddleware::class,
         'employee.jwt' => \App\Http\Middleware\EmployeeJwtMiddleware::class,
         'customer.jwt' => \App\Http\Middleware\CustomerJwtMiddleware::class,
+        'verified.account' => \App\Http\Middleware\EnsureVerifiedAccount::class,
+        'any.jwt' => \App\Http\Middleware\AnyJwtMiddleware::class,
 
         // ========== GITHUB WEBHOOK MIDDLEWARE ==========
         'github-webhook' => \App\Http\Middleware\VerifyGitHubWebhook::class,

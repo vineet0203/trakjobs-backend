@@ -289,4 +289,9 @@ trait UserRelations
 
         return false;
     }
+
+    public function verificationProfile()
+    {
+        return $this->morphOne(\App\Models\VerificationProfile::class, 'authenticatable');
+    }
 }
