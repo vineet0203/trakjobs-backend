@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\UploadedFile;
 
 class VerificationService
@@ -94,10 +95,19 @@ class VerificationService
     {
         $destination = $user->email;
         if ($type === 'whatsapp') {
-            $destination = $user->phone ?? $user->mobile_number;
+            $vendorNumber = DB::table('vendors')->where('user_id', $user->id)->value('mobile_number');
+            $employeeNumber = DB::table('employees')->where('id', $user->id)->value('mobile_number');
+            $destination = $user->phone ?? $user->mobile_number ?? $vendorNumber ?? $employeeNumber;
             if (!$destination) {
                 throw new \Exception('No mobile phone number associated with this account.');
             }
+            // Normalize to E.164 format for Twilio (India default +91)
+            $destination = preg_replace('/[^0-9]/', '', $destination);
+            $destination = ltrim($destination, '0');
+            if (strlen($destination) === 10) {
+                $destination = '91' . $destination;
+            }
+            $destination = '+' . $destination;
         }
 
         // Rate limiting check (max 1 OTP per contact every 60 seconds)
@@ -181,7 +191,9 @@ class VerificationService
     public function verifyOtp($user, string $code): bool
     {
         $email = $user->email;
-        $phone = $user->phone ?? $user->mobile_number;
+        $vendorNumber = DB::table('vendors')->where('user_id', $user->id)->value('mobile_number');
+        $employeeNumber = DB::table('employees')->where('id', $user->id)->value('mobile_number');
+        $phone = $user->phone ?? $user->mobile_number ?? $vendorNumber ?? $employeeNumber;
 
         // Retrieve active OTP records matching either email or phone destination
         $otp = VerificationOtp::where(function ($query) use ($email, $phone) {

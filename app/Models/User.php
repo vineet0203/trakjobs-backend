@@ -35,6 +35,7 @@ class User extends Authenticatable implements JWTSubject
         // Account state
         'is_active',
         'status',
+        'verification_status',
         'is_system',
 
         // Deactivation / Reactivation
