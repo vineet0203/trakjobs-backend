@@ -150,7 +150,7 @@ class CustomerAccountService
             throw new HttpException(401, 'Invalid email or password.');
         }
 
-        if ($customer->role !== 'customer') {
+        if (!in_array($customer->role, ["customer", "client"])) {
             throw new HttpException(403, 'Invalid account role for customer login.');
         }
 
