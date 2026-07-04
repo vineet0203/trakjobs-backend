@@ -29,7 +29,7 @@ class CustomerJwtMiddleware
             $customerId = (int) $payload->get('sub');
             $customer = Customer::find($customerId);
 
-            if (!$customer || $customer->role !== 'customer') {
+            if (!$customer ||  !in_array($customer->role, ["customer", "client"])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Customer not found.',
