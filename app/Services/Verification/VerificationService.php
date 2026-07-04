@@ -195,6 +195,15 @@ class VerificationService
         $employeeNumber = DB::table('employees')->where('id', $user->id)->value('mobile_number');
         $phone = $user->phone ?? $user->mobile_number ?? $vendorNumber ?? $employeeNumber;
 
+        // Normalize phone to E.164 format
+        if ($phone) {
+            $phone = preg_replace("/[^0-9]/", "", $phone);
+            $phone = ltrim($phone, "0");
+            if (strlen($phone) === 10) {
+                $phone = "91" . $phone;
+            }
+            $phone = "+" . $phone;
+        }
         // Retrieve active OTP records matching either email or phone destination
         $otp = VerificationOtp::where(function ($query) use ($email, $phone) {
             $query->where('contact_destination', $email);
