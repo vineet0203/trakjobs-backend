@@ -470,7 +470,7 @@ Route::middleware(['jwt.verify', 'verified.account'])->group(function () {
 // ============================================
 // VERIFICATION FLOW ROUTES (PROTECTED)
 // ============================================
-Route::middleware(['any.jwt', 'verified.account'])->prefix('verification')->group(function () {
+Route::middleware(['any.jwt'])->prefix('verification')->group(function () {
     Route::get('/progress', [VerificationController::class, 'getProgress']);
     Route::post('/progress', [VerificationController::class, 'saveProgress']);
     Route::post('/document/upload', [VerificationController::class, 'uploadDocument']);
