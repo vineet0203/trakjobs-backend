@@ -16,8 +16,9 @@ class EnsureVerifiedAccount
         $user = $request->attributes->get('auth_user') ?? auth()->user();
 
         // If authenticated and verification status is not verified, block request (excluding verification routes and auth info)
-        if ($user && isset($user->verification_status) && $user->verification_status !== 'verified') {
-            if (!$request->is('api/v1/verification/*') && !$request->is('api/v1/auth/me')) {
+        // Skip verification for platform admins
+        if ($user && isset($user->verification_status) && $user->verification_status !== 'verified' && !$user->isPlatformAdmin()) {
+            if (!$request->is('api/v1/verification/*') && !$request->is('api/v1/auth/me') && !$request->is('api/v1/customer/me')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Your account must be verified to perform this action.',

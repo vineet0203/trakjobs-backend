@@ -130,7 +130,7 @@ Route::middleware(['employee.jwt', 'verified.account'])->prefix('employee')->gro
     Route::put('time-entry/{id}', [TimeTrackingController::class, 'updateTimeEntry']);
 });
 
-Route::middleware(['customer.jwt'])->prefix('customer')->group(function () {
+Route::middleware(['any.jwt'])->prefix('customer')->group(function () {
     // Customer Messaging routes
     Route::get('messages', [MessageController::class, 'getCustomerConversations']);
     Route::post('messages/send', [MessageController::class, 'sendMessage']);
@@ -550,3 +550,4 @@ Route::middleware(['jwt.verify', 'role:platform_admin'])->prefix('admin/service-
 Route::prefix('service-sub-categories')->group(function () {
     Route::get('/', [ServiceSubCategoryController::class, 'index']);
 });
+
