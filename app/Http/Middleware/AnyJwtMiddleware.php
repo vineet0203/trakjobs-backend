@@ -30,6 +30,14 @@ class AnyJwtMiddleware
                     ], 401);
                 }
                 $request->attributes->set('auth_user', $customer);
+                $request->attributes->set('customer', [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'phone' => $customer->phone,
+                    'role' => $customer->role,
+                    'status' => $customer->status,
+                ]);
             } elseif ($scope === 'employee') {
                 $employeeId = (int) $payload->get('sub');
                 $employee = Employee::find($employeeId);
