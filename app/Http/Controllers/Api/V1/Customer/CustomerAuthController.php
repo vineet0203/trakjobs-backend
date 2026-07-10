@@ -145,6 +145,7 @@ class CustomerAuthController extends BaseController
             'phone'          => is_array($customer) ? ($customer['phone'] ?? null) : ($customer->phone ?? null),
             'role'           => is_array($customer) ? ($customer['role'] ?? null) : ($customer->role ?? null),
             'status'         => is_array($customer) ? ($customer['status'] ?? null) : ($customer->status ?? null),
+            'verification_status' => is_array($customer) ? ($customer['verification_status'] ?? null) : ($customer->verification_status ?? null),
             'profile_photo'  => is_array($customer) ? ($customer['profile_photo'] ?? null) : ($customer->profile_photo ?? null),
             'address_line_1'               => $clientData?->address_line_1 ?? null,
             'address_line_2'               => $clientData?->address_line_2 ?? null,
