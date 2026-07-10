@@ -207,11 +207,17 @@ class EmployeeAuthController extends BaseController
 
     public function me(Request $request): JsonResponse
     {
-        $employee = $request->attributes->get('employee');
+        $employeeAttr = $request->attributes->get('employee');
+        $employee = Employee::find($employeeAttr['id']);
 
         return $this->successResponse([
-            'id' => $employee['id'],
-            'vendor_id' => $employee['vendor_id'],
+            'id'            => $employee->id,
+            'vendor_id'     => $employee->vendor_id,
+            'first_name'    => $employee->first_name,
+            'last_name'     => $employee->last_name,
+            'email'         => $employee->email,
+            'phone'         => $employee->phone,
+            'mobile_number' => $employee->mobile_number,
         ], 'Employee authenticated successfully.');
     }
 }
