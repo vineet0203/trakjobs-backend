@@ -19,6 +19,7 @@ class Customer extends Model implements JWTSubject
         'password',
         'role',
         'status',
+        'verification_status',
         'profile_photo',
         'email_verified_at',
     ];

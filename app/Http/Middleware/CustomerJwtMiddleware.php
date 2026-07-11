@@ -52,6 +52,7 @@ class CustomerJwtMiddleware
                 'phone' => $customer->phone,
                 'role' => $customer->role,
                 'status' => $customer->status,
+                'verification_status' => $customer->verification_status,
             ]);
         } catch (TokenExpiredException $e) {
             return response()->json([

@@ -31,6 +31,7 @@ class Employee extends BaseModel implements JWTSubject
         'reporting_manager_id',
         'role',
         'is_active',
+        'verification_status',
         'profile_photo_path',
         'created_by',
         'updated_by',

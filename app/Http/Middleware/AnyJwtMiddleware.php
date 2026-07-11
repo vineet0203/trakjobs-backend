@@ -37,6 +37,7 @@ class AnyJwtMiddleware
                     'phone' => $customer->phone,
                     'role' => $customer->role,
                     'status' => $customer->status,
+                    'verification_status' => $customer->verification_status,
                 ]);
             } elseif ($scope === 'employee') {
                 $employeeId = (int) $payload->get('sub');
