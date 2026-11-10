@@ -7,6 +7,7 @@ use App\Services\Verification\VerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class VerificationController extends BaseController
@@ -42,6 +43,7 @@ class VerificationController extends BaseController
                 'verification_data' => $profile->verification_data ?? new \stdClass(),
                 'document_type' => $profile->document_type,
                 'has_document' => !empty($profile->document_path),
+                'phone_otp_required' => config('verification.phone_otp_required'),
             ], 'Verification progress retrieved successfully.');
         } catch (\Throwable $e) {
             return $this->errorResponse($e->getMessage(), 500);
@@ -79,6 +81,8 @@ class VerificationController extends BaseController
                 'status' => $profile->status,
                 'verification_data' => $profile->verification_data,
             ], 'Verification progress saved successfully.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Throwable $e) {
             return $this->errorResponse($e->getMessage(), 500);
         }
@@ -209,6 +213,7 @@ class VerificationController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'code' => ['required', 'string', 'size:6'],
+            'type' => ['required', 'string', 'in:email,whatsapp'],
         ]);
 
         if ($validator->fails()) {
@@ -221,7 +226,11 @@ class VerificationController extends BaseController
                 return $this->unauthorizedResponse('User session not found.');
             }
 
-            $this->verificationService->verifyOtp($user, $request->input('code'));
+            $this->verificationService->verifyOtp(
+                $user,
+                $request->input('code'),
+                $request->input('type')
+            );
 
             return $this->successResponse(null, 'Code verified successfully.');
         } catch (\Throwable $e) {

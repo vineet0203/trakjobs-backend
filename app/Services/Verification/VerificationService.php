@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
 
 class VerificationService
 {
@@ -39,6 +40,20 @@ class VerificationService
     public function saveProgress($user, int $step, array $stepData): VerificationProfile
     {
         $profile = $this->getOrCreateProfile($user);
+
+        if ($step === 6) {
+            if (!$this->hasVerifiedOtp($user, 'email')) {
+                throw ValidationException::withMessages([
+                    'email' => 'Please verify your email address before submitting.',
+                ]);
+            }
+
+            if (config('verification.phone_otp_required') && !$this->hasVerifiedOtp($user, 'whatsapp')) {
+                throw ValidationException::withMessages([
+                    'phone' => 'Please verify your phone number before submitting.',
+                ]);
+            }
+        }
 
         // Merge new step data into existing verification_data JSON
         $existingData = $profile->verification_data ?? [];
@@ -93,25 +108,21 @@ class VerificationService
      */
     public function sendOtp($user, string $type): bool
     {
-        $destination = $user->email;
+        $destination = $type === 'email'
+            ? strtolower(trim($user->email))
+            : $this->getPhoneDestination($user);
+
         if ($type === 'whatsapp') {
-            $vendorNumber = DB::table('vendors')->where('user_id', $user->id)->value('mobile_number');
-            $employeeNumber = DB::table('employees')->where('id', $user->id)->value('mobile_number');
-            $destination = $user->phone ?? $user->mobile_number ?? $vendorNumber ?? $employeeNumber;
             if (!$destination) {
                 throw new \Exception('No mobile phone number associated with this account.');
             }
-            // Normalize to E.164 format for Twilio (India default +91)
-            $destination = preg_replace('/[^0-9]/', '', $destination);
-            $destination = ltrim($destination, '0');
-            if (strlen($destination) === 10) {
-                $destination = '91' . $destination;
-            }
-            $destination = '+' . $destination;
         }
 
         // Rate limiting check (max 1 OTP per contact every 60 seconds)
-        $recent = VerificationOtp::where('contact_destination', $destination)
+        $recent = VerificationOtp::where('authenticatable_type', get_class($user))
+            ->where('authenticatable_id', $user->id)
+            ->where('contact_type', $type)
+            ->where('contact_destination', $destination)
             ->where('created_at', '>', now()->subMinute())
             ->first();
 
@@ -126,6 +137,8 @@ class VerificationService
         VerificationOtp::create([
             'contact_type' => $type,
             'contact_destination' => $destination,
+            'authenticatable_type' => get_class($user),
+            'authenticatable_id' => $user->id,
             'otp_hash' => $hash,
             'expires_at' => now()->addMinutes(10),
         ]);
@@ -188,29 +201,16 @@ class VerificationService
     /**
      * Verify the One-Time Passcode (OTP)
      */
-    public function verifyOtp($user, string $code): bool
+    public function verifyOtp($user, string $code, string $type): bool
     {
-        $email = $user->email;
-        $vendorNumber = DB::table('vendors')->where('user_id', $user->id)->value('mobile_number');
-        $employeeNumber = DB::table('employees')->where('id', $user->id)->value('mobile_number');
-        $phone = $user->phone ?? $user->mobile_number ?? $vendorNumber ?? $employeeNumber;
+        $destination = $type === 'email'
+            ? strtolower(trim($user->email))
+            : $this->getPhoneDestination($user);
 
-        // Normalize phone to E.164 format
-        if ($phone) {
-            $phone = preg_replace("/[^0-9]/", "", $phone);
-            $phone = ltrim($phone, "0");
-            if (strlen($phone) === 10) {
-                $phone = "91" . $phone;
-            }
-            $phone = "+" . $phone;
-        }
-        // Retrieve active OTP records matching either email or phone destination
-        $otp = VerificationOtp::where(function ($query) use ($email, $phone) {
-            $query->where('contact_destination', $email);
-            if ($phone) {
-                $query->orWhere('contact_destination', $phone);
-            }
-        })
+        $otp = VerificationOtp::where('authenticatable_type', get_class($user))
+        ->where('authenticatable_id', $user->id)
+        ->where('contact_type', $type)
+        ->where('contact_destination', $destination)
         ->whereNull('verified_at')
         ->where('expires_at', '>', now())
         ->orderBy('created_at', 'desc')
@@ -231,11 +231,46 @@ class VerificationService
 
         $otp->update(['verified_at' => now()]);
 
-        // Save phone_otp_verified_at attribute if it's phone validation
-        if ($otp->contact_type === 'whatsapp') {
-            $user->update(['phone_otp_verified_at' => now()]);
+        return true;
+    }
+
+    private function hasVerifiedOtp($user, string $type): bool
+    {
+        $destination = $type === 'email'
+            ? strtolower(trim($user->email))
+            : $this->getPhoneDestination($user);
+
+        if (!$destination) {
+            return false;
         }
 
-        return true;
+        return VerificationOtp::where('authenticatable_type', get_class($user))
+            ->where('authenticatable_id', $user->id)
+            ->where('contact_type', $type)
+            ->where('contact_destination', $destination)
+            ->whereNotNull('verified_at')
+            ->exists();
+    }
+
+    private function getPhoneDestination($user): ?string
+    {
+        if ($user instanceof \App\Models\User) {
+            $phone = $user->vendor?->mobile_number ?? $user->vendor?->phone;
+        } elseif ($user instanceof \App\Models\Employee) {
+            $phone = $user->mobile_number ?? $user->phone;
+        } else {
+            $phone = $user->mobile_number ?? $user->phone;
+        }
+
+        if (!$phone) {
+            return null;
+        }
+
+        $digits = ltrim(preg_replace('/\D/', '', $phone), '0');
+        if (strlen($digits) === 10) {
+            $digits = '91' . $digits;
+        }
+
+        return '+' . $digits;
     }
 }

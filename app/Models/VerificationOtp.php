@@ -11,6 +11,8 @@ class VerificationOtp extends Model
     protected $fillable = [
         'contact_type',
         'contact_destination',
+        'authenticatable_type',
+        'authenticatable_id',
         'otp_hash',
         'attempts',
         'expires_at',
