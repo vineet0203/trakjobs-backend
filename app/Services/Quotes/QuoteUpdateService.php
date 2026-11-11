@@ -74,14 +74,15 @@ class QuoteUpdateService
             }
 
             // Update items if provided - check both 'items' and 'line_items'
-            $taxRate = $quote->is_tax_applicable ? $quote->tax_percentage : 0;
+            $taxApplicable = (bool) $quote->is_tax_applicable;
+            $defaultTaxRate = $taxApplicable ? (int) $quote->tax_percentage : 0;
             if (isset($data['items'])) {
-                $this->updateQuoteItems($quote, $data['items'], $taxRate);
+                $this->updateQuoteItems($quote, $data['items'], $taxApplicable, $defaultTaxRate);
                 $quote->unsetRelation('items');
                 // Recalculate totals after items update
                 $quote->calculateTotals();
             } elseif (isset($data['line_items'])) {
-                $this->updateQuoteItems($quote, $data['line_items'], $taxRate);
+                $this->updateQuoteItems($quote, $data['line_items'], $taxApplicable, $defaultTaxRate);
                 $quote->unsetRelation('items');
                 $quote->calculateTotals();
             }
@@ -160,7 +161,12 @@ class QuoteUpdateService
     /**
      * Update quote items
      */
-    private function updateQuoteItems(Quote $quote, array $items, float $taxRate = 0): void
+    private function updateQuoteItems(
+        Quote $quote,
+        array $items,
+        bool $taxApplicable,
+        float $defaultTaxRate
+    ): void
     {
         QuoteItem::where('quote_id', $quote->id)->delete();
 
@@ -171,9 +177,11 @@ class QuoteUpdateService
                 continue;
             }
 
-            $itemTaxRate = $taxRate > 0 ? $taxRate : ($item['tax_rate'] ?? 0);
+            $itemTaxRate = $taxApplicable
+                ? (float) ($item['tax_rate'] ?? $defaultTaxRate)
+                : 0;
             $subtotal = $item['quantity'] * $item['unit_price'];
-            $taxAmount = $subtotal * ($itemTaxRate / 100);
+            $taxAmount = round($subtotal * ($itemTaxRate / 100), 2);
 
             QuoteItem::create([
                 'quote_id' => $quote->id,
@@ -183,7 +191,7 @@ class QuoteUpdateService
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $itemTaxRate,
                 'tax_amount' => $taxAmount,
-                'item_total' => $subtotal + $taxAmount,
+                'item_total' => round($subtotal + $taxAmount, 2),
                 'sort_order' => $sortOrder++,
                 'package_id' => $item['package_id'] ?? null,
             ]);

@@ -44,7 +44,11 @@ class InvoiceController extends BaseController
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+            if ($request->input('status') === 'generated') {
+                $query->whereIn('status', ['generated', 'draft']);
+            } else {
+                $query->where('status', $request->input('status'));
+            }
         }
 
         $invoices = $query->paginate($perPage);
@@ -74,7 +78,7 @@ class InvoiceController extends BaseController
             'note' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
             'billing_address' => 'nullable|array',
-            'status' => 'nullable|in:draft,sent,paid,cancelled',
+            'status' => 'nullable|in:draft,generated,sent,paid,cancelled',
             'items' => 'required|array|min:1',
             'items.*.job_id' => 'nullable|exists:jobs,id',
             'items.*.job_name' => 'required|string|max:255',
@@ -133,7 +137,7 @@ class InvoiceController extends BaseController
                 'note' => $validated['note'] ?? null,
                 'terms_conditions' => $validated['terms_conditions'] ?? null,
                 'billing_address' => $validated['billing_address'] ?? null,
-                'status' => $validated['status'] ?? 'draft',
+                'status' => $validated['status'] ?? 'generated',
             ]);
 
             $items = array_map(function (array $item) {
@@ -220,7 +224,7 @@ class InvoiceController extends BaseController
             'note' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
             'billing_address' => 'nullable|array',
-            'status' => 'nullable|in:draft,sent,paid,cancelled',
+            'status' => 'nullable|in:draft,generated,sent,paid,cancelled',
             'items' => 'sometimes|array|min:1',
             'items.*.job_id' => 'nullable|exists:jobs,id',
             'items.*.job_name' => 'required_with:items|string|max:255',

@@ -58,12 +58,27 @@ class TimeTrackingController extends BaseController
         $employeeId = (int) $employee['id'];
         $vendorId = (int) $employee['vendor_id'];
 
-        $rows = DB::table('job_assignments as ja')
-            ->join('jobs as j', 'j.id', '=', 'ja.job_id')
-            ->where('ja.employee_id', $employeeId)
+        $rows = DB::table('jobs as j')
+            ->leftJoin('job_assignments as ja', function ($join) use ($employeeId) {
+                $join->on('ja.job_id', '=', 'j.id')
+                    ->where('ja.employee_id', '=', $employeeId);
+            })
+            ->leftJoin('schedules as s', function ($join) use ($employeeId, $vendorId) {
+                $join->on('s.job_id', '=', 'j.id')
+                    ->where('s.vendor_id', '=', $vendorId)
+                    ->whereNull('s.deleted_at')
+                    ->where(function ($query) use ($employeeId) {
+                        $query->where('s.crew_id', $employeeId)
+                            ->orWhere('s.employee_id', $employeeId);
+                    });
+            })
             ->where('j.vendor_id', $vendorId)
             ->whereNull('j.deleted_at')
-            ->orderByDesc('ja.assigned_at')
+            ->where(function ($query) {
+                $query->whereNotNull('ja.id')
+                    ->orWhereNotNull('s.id');
+            })
+            ->orderByDesc(DB::raw('COALESCE(s.start_datetime, ja.assigned_at)'))
             ->select([
                 'j.id',
                 'j.job_number',
@@ -75,13 +90,17 @@ class TimeTrackingController extends BaseController
                 'j.issue_date',
                 'j.start_date',
                 'j.end_date',
+                's.id as schedule_id',
+                's.start_datetime as scheduled_start',
+                's.schedule_date',
+                's.status as schedule_status',
                 'ja.shift',
                 'ja.assigned_at',
             ])
             ->get();
 
         $items = $rows->map(function ($row) {
-            $displayDate = $row->start_date ?: $row->issue_date;
+            $displayDate = $row->scheduled_start ?: $row->schedule_date ?: $row->start_date ?: $row->issue_date;
             if (!$displayDate && $row->assigned_at) {
                 $displayDate = Carbon::parse($row->assigned_at)->toDateString();
             }
@@ -90,12 +109,14 @@ class TimeTrackingController extends BaseController
                 'id' => (int) $row->id,
                 'title' => $row->title,
                 'date' => $displayDate,
-                'status' => $this->normalizeListingStatus((string) $row->source_status),
+                'status' => $this->normalizeListingStatus((string) ($row->schedule_status ?: $row->source_status)),
                 'basic_details' => [
                     'job_number' => $row->job_number,
                     'priority' => $row->priority,
                     'work_type' => $row->work_type,
                     'shift' => $row->shift,
+                    'schedule_id' => $row->schedule_id ? (int) $row->schedule_id : null,
+                    'scheduled_start' => $row->scheduled_start,
                     'source_status' => $row->source_status,
                     'description' => $row->description,
                     'end_date' => $row->end_date,

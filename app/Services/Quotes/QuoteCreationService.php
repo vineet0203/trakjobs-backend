@@ -146,6 +146,8 @@ class QuoteCreationService
     private function createQuoteItems(Quote $quote, array $items): void
     {
         $sortOrder = 0;
+        $taxApplicable = (bool) $quote->is_tax_applicable;
+        $defaultTaxRate = (int) $quote->tax_percentage;
 
         foreach ($items as $item) {
             // Skip items marked for deletion
@@ -154,16 +156,19 @@ class QuoteCreationService
             }
 
             $subtotal = $item['quantity'] * $item['unit_price'];
-            $taxAmount = $subtotal * (($item['tax_rate'] ?? 0) / 100);
+            $taxRate = $taxApplicable
+                ? (float) ($item['tax_rate'] ?? $defaultTaxRate)
+                : 0;
+            $taxAmount = round($subtotal * ($taxRate / 100), 2);
 
             $quoteItem = new QuoteItem([
                 'item_name' => $item['item_name'],
                 'description' => $item['description'] ?? null,
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
-                'tax_rate' => $item['tax_rate'] ?? 0,
+                'tax_rate' => $taxRate,
                 'tax_amount' => $taxAmount,
-                'item_total' => $subtotal + $taxAmount,
+                'item_total' => round($subtotal + $taxAmount, 2),
                 'sort_order' => $sortOrder++,
                 'package_id' => $item['package_id'] ?? null,
             ]);
